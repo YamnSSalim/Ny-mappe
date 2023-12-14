@@ -7,55 +7,53 @@ Zumo32U4ButtonB buttonB;
 Zumo32U4Motors motors;
 Zumo32U4OLED oled;
 
-
-
-                  ///////////////////
-                  //// Encoders /////
-                  ///////////////////
+///////////////////
+//// Encoders /////
+///////////////////
 
 //---Encoders Variabel---//
 int32_t countLeft = 0;
 int32_t countRight = 0;
 
-void setupEncoders() {
-  encoders.init();
+void setupEncoders()
+{
+    encoders.init();
 }
 
-void updateEncoders() {
-  long Left = encoders.getCountsAndResetLeft();
-  long Right = encoders.getCountsAndResetRight();
+void updateEncoders()
+{ // TODO: FIX
+    long Left = encoders.getCountsAndResetLeft();
+    long Right = encoders.getCountsAndResetRight();
 
-  countLeft += Left;
-  countRight += Right;
-
+    countLeft += Left;
+    countRight += Right;
 }
 
-                ////////////////////////
-                // Calculate Distance //
-                ////////////////////////
+////////////////////////
+// Calculate Distance //
+////////////////////////
 
 //------Global Speed & Distance Variablers ------//
 const float WHEEL_DIAMETER_METER = 0.035; // 35 mm converted to meters
 const float wheelCircumference = 2 * PI * WHEEL_DIAMETER_METER;
-const float encoderCpr = 909.7 ; // Counts per revolution
+const float encoderCpr = 909.7; // Counts per revolution
 int prevCountLeft = 0;
-int prevCountRight = 0; 
+int prevCountRight = 0;
 //-----------------------------------------------//
-
 
 float distance = 0;
 
-void updateDistance(){
-  float distanceLeft = (countLeft * wheelCircumference) / encoderCpr;
-  float distanceRight = (countRight * wheelCircumference) / encoderCpr;
+void updateDistance()
+{
+    float distanceLeft = (countLeft * wheelCircumference) / encoderCpr;
+    float distanceRight = (countRight * wheelCircumference) / encoderCpr;
 
-  distance = (distanceRight + distanceLeft) / 2; 
+    distance = (distanceRight + distanceLeft) / 2;
 }
 
-
-                    ///////////////////
-                    // Calculate Speed
-                    ///////////////////
+///////////////////
+// Calculate Speed
+///////////////////
 
 //----Speed-Variabler----//
 float speedLeft = 0;
@@ -63,25 +61,25 @@ float speedRight = 0;
 const float timeInterval = 1.0;
 //-----------------------//
 
-
 float speed = 0;
 
-void updateSpeed() {
-  int deltaCountLeft = countLeft - prevCountLeft;
-  int deltaCountRight = countRight - prevCountRight;
+void updateSpeed()
+{
+    int deltaCountLeft = countLeft - prevCountLeft;
+    int deltaCountRight = countRight - prevCountRight;
 
-  speedLeft = (deltaCountLeft * wheelCircumference) / (encoderCpr * timeInterval);
-  speedRight = (deltaCountRight * wheelCircumference) / (encoderCpr * timeInterval);
+    speedLeft = (deltaCountLeft * wheelCircumference) / (encoderCpr * timeInterval);
+    speedRight = (deltaCountRight * wheelCircumference) / (encoderCpr * timeInterval);
 
-  prevCountRight = countRight;
-  prevCountLeft = countLeft;
+    prevCountRight = countRight;
+    prevCountLeft = countLeft;
 
-  speed = (speedLeft + speedRight) / 2.0; 
+    speed = (speedLeft + speedRight) / 2.0;
 }
 
-                    ///////////////////
-                    // Average Speed //
-                    ///////////////////
+///////////////////
+// Average Speed //
+///////////////////
 
 //---Average-Speed-Variables---//
 const int numMeasurements = 10;
@@ -91,104 +89,93 @@ int speedIndex = 0;
 
 float averageSpeed = 0;
 
-void updateAverageSpeed(float speed) {
-  speedMeasurements[speedIndex] = speed;
-  speedIndex = (speedIndex + 1) % numMeasurements;
+void updateAverageSpeed()
+{
+    speedMeasurements[speedIndex] = speed;
+    speedIndex = (speedIndex + 1) % numMeasurements;
 
-  float sum = 0;
-  for (int i = 0; i < numMeasurements; i++){
-    sum += speedMeasurements[i];
-  }
-  averageSpeed = sum / numMeasurements;
+    float sum = 0;
+    for (int i = 0; i < numMeasurements; i++)
+    {
+        sum += speedMeasurements[i];
+    }
+    averageSpeed = sum / numMeasurements;
 }
 
+///////////////////
+////OLED-Screen////
+///////////////////
 
-
-                    ///////////////////
-                    ////OLED-Screen////
-                    ///////////////////
-
-void setupOLED(){
-  oled.init();
-  oled.clear();
+void setupOLED()
+{
+    oled.init();
+    oled.clear();
 }
 
-void updateSpeedOMeterScreen(){
-  oled.setLayout11x4();
-  oled.gotoXY(2.5, 0);
-  oled.print("SpeedY");
+void updateSpeedOMeterScreen()
+{
+    oled.setLayout11x4();
+    oled.gotoXY(2.5, 0);
+    oled.print("SpeedY");
 
-  oled.gotoXY(1, 2);
+    oled.gotoXY(1, 2);
 
-  oled.print("m/s: ");
-  oled.print(speed);
+    oled.print("m/s: ");
+    oled.print(speed);
 
-  oled.gotoXY(2, 3);
+    oled.gotoXY(2, 3);
 
-  oled.print("m: ");
-  oled.print(distance);
+    oled.print("m: ");
+    oled.print(distance);
 }
 
-
-
-                      ///////////////////
-                      // Discharge Rate /
-                      ///////////////////
+///////////////////
+// Discharge Rate /
+///////////////////
 
 //-----Discharge-Variables-----//
 const float dischargeRateBase = 0.05;
 //-----------------------------//
-                     
 
 float dischargeRate = 0;
 
-void updateDischargeRate() {
-  updateDistance();
-  updateAverageSpeed(speed);
+void updateDischargeRate()
+{
+    float calculatedDischargeRate = dischargeRateBase * averageSpeed * distance;
 
-  float calculatedDischargeRate = dischargeRateBase * averageSpeed * distance;
-  
-  dischargeRate += calculatedDischargeRate/1.5;
+    dischargeRate += calculatedDischargeRate / 1.5;
 }
 
-
-                      ///////////////////
-                      // Charge Rate /
-                      ///////////////////
+///////////////////
+// Charge Rate ////
+///////////////////
 
 //-----Discharge-Variables-----//
 const float chargeRateBase = 0.05;
 //-----------------------------//
-       
 
 float chargeRate = 0;
 
-void updateChargeRate() {
-  updateDistance();
-  updateAverageSpeed(speed);
+void updateChargeRate()
+{
+    float calculatedChargeRate = chargeRateBase * averageSpeed * distance;
 
-  float calculatedChargeRate = chargeRateBase * averageSpeed * distance;
-  
-  chargeRate += calculatedChargeRate/2;
+    chargeRate += calculatedChargeRate / 2;
 }
 
-
-
-                      ///////////////////
-                      ////// Alarm //////
-                      ///////////////////
+///////////////////
+////// Alarm //////
+///////////////////
 
 int alarm = 0;
 
-void updateAlarm() {
-
+void updateAlarm()
+{
 }
 
-
-                      ///////////////////
-                      // Battery Level //
-                      ///////////////////
-
+///////////////////
+// Battery Level //
+///////////////////
 
 //-----Battery-Variables-----//
 const float maxBatteryLevel = 100.0;
@@ -200,139 +187,119 @@ const float lowBatteryThreshold = 20.0;
 bool shouldMove = true;
 //-------------------------------------//
 
+//-----------Charging-Cycles-------------//
+int chargingCycles = 0;
+//-------------------------------------//
 
 float batteryLevel = 100.0;
 
-void updateBatteryLevel() {
+void updateBatteryLevel()
+{ // Edit
+    if (speed > 0)
+    {
+        batteryLevel -= dischargeRate;
 
-  if (speed > 0){
-    batteryLevel -= dischargeRate;
-
-    if (batteryLevel < lowBatteryThreshold){
-      batteryLevel = lowBatteryThreshold;
+        if (batteryLevel < lowBatteryThreshold)
+        {
+            batteryLevel = lowBatteryThreshold;
+        }
+        if (batteryLevel > maxBatteryLevel)
+        {
+            batteryLevel = maxBatteryLevel;
+        }
     }
-  }
- 
-  if (buttonB.isPressed()){
-    shouldMove = false;
-
-    motors.setSpeeds(-150, -150);
-    batteryLevel += chargeRate;
-
-    if (batteryLevel > maxBatteryLevel){
-      batteryLevel = maxBatteryLevel;
-    }
-  } 
-
-  else {
-  shouldMove = true;
-  }
-
-}
-
-
-                      /////////////////////
-                      // Charging cycles //
-                      /////////////////////
-
-
-int chargingCycles = 0;
-
-void updateChargingCycle(){
-  chargingCycles++;
 }
 
 ///////////////////
 //// Main Loop ////
 ///////////////////
 
-void setup() {
-  Serial.begin(9600);
-  buttonA.waitForPress();
-  setupOLED();
-  setupEncoders();
+void setup()
+{
+    Serial.begin(9600);
+    buttonA.waitForPress();
+    setupOLED();
+    setupEncoders();
 }
 
-void loop() {
-  if (shouldMove){
-    motors.setSpeeds(150, 150);
-  }
+void loop()
+{
+    if (shouldMove)
+    {
+        motors.setSpeeds(150, 150);
+    }
 
-  updateEncoders(); //Fixed
+    updateEncoders(); // Fixed
 
-/*
-  //-----Encoder-OUTPUT-------//
-  Serial.println("--------------");
-  Serial.println("CountLeft: ");
-  Serial.println(countLeft);
-  Serial.println("CountRight: ");
-  Serial.println(countRight);
-  Serial.println("--------------");
-  //--------------------------//
- */
+    /*
+    //-----Encoder-OUTPUT-------//
+    Serial.println("--------------");
+    Serial.println("CountLeft: ");
+    Serial.println(countLeft);
+    Serial.println("CountRight: ");
+    Serial.println(countRight);
+    Serial.println("--------------");
+    //--------------------------//
+   */
 
-  updateDistance(); //Fixed 
+    updateDistance(); // Fixed
 
-/*
-  //-------Distance-OUTPUT-------//
-  Serial.println("Distance: ");
-  Serial.println(distance);
-  Serial.println("--------------");
-  //-----------------------------//
+    /*
+    //-------Distance-OUTPUT-------//
+    Serial.println("Distance: ");
+    Serial.println(distance);
+    Serial.println("--------------");
+    //-----------------------------//
+  */
+
+    updateSpeed(); // Fixed
+
+    /*
+    //-------Speed-OUTPUT-------//
+    Serial.println("Speed: ");
+    Serial.println(speed);
+    Serial.println("--------------");
+    //-----------------------------//
+  */
+
+    updateAverageSpeed(); // Fixed
+    /*
+//-------Averagespeed-OUTPUT-------//
+Serial.println("Averagespeed: ");
+Serial.println(averageSpeed);
+Serial.println("--------------");
+//-----------------------------//
 */
 
-  updateSpeed(); //Fixed
+    updateDischargeRate(); // Fixed
 
-/*
-  //-------Speed-OUTPUT-------//
-  Serial.println("Speed: ");
-  Serial.println(speed);
-  Serial.println("--------------");
-  //-----------------------------//
-*/
+    /*
+    //-------Discharge-OUTPUT-------//
+    Serial.println("DischargeRate: ");
+    Serial.println(dischargeRate);
+    Serial.println("--------------");
+    //-----------------------------//
+  */
 
+    updateChargeRate(); // Fixed
 
-  updateAverageSpeed(speed); //Fixed 
-/*
-  //-------Averagespeed-OUTPUT-------//
-  Serial.println("Averagespeed: ");
-  Serial.println(averageSpeed);
-  Serial.println("--------------");
-  //-----------------------------//
-*/
+    /*
+    //-------Discharge-OUTPUT-------//
+    Serial.println("ChargeRate: ");
+    Serial.println(chargeRate);
+    Serial.println("--------------");
+    //-----------------------------//
+  */
+    updateSpeedOMeterScreen();
 
-  updateDischargeRate(); //Fixed
+    updateBatteryLevel();
+    Serial.println("BatteryLevel: ");
+    Serial.println(batteryLevel);
+    Serial.println("---------------");
+    Serial.println("ChargingCylce: ");
+    Serial.println(chargingCycles);
 
-/*
-  //-------Discharge-OUTPUT-------//
-  Serial.println("DischargeRate: ");
-  Serial.println(dischargeRate);
-  Serial.println("--------------");
-  //-----------------------------//
-*/
+    //---------------------------------------TEST-logic------------------------------------//
 
-  updateChargeRate(); //Fixed
-
-/*
-  //-------Discharge-OUTPUT-------//
-  Serial.println("ChargeRate: ");
-  Serial.println(chargeRate);
-  Serial.println("--------------");
-  //-----------------------------//  
-*/
-  updateSpeedOMeterScreen();
-
-  updateBatteryLevel();
-  Serial.println("BatteryLevel: ");
-  Serial.println(batteryLevel);
-  Serial.println("---------------");
-
-  updateChargingCycle();
-  Serial.println("ChargingCylce: ");
-  Serial.println(chargingCycles);
-
-
-//---------------------------------------TEST-logic------------------------------------//
-
-  delay(500);
+    delay(500);
 }
