@@ -14,6 +14,7 @@ Zumo32U4OLED oled;
 //---Encoders Variabel---//
 int32_t countLeft = 0;
 int32_t countRight = 0;
+//-----------------------//
 
 void setupEncoders()
 {
@@ -173,6 +174,33 @@ void updateAlarm()
 {
 }
 
+
+
+////////////////////
+// Hidden Feature //
+////////////////////
+
+
+//----------Flag-HiddenFeature--------//
+bool hiddenFeature = true;
+//------------------------------------//
+//-----------Flag-MOVEMENT-------------//
+bool shouldMove = true;
+//-------------------------------------//
+
+void updateHiddenFeature()
+{
+    if(buttonB.isPressed()){
+        hiddenFeature = !hiddenFeature;
+
+        if (hiddenFeature){
+            shouldMove = false;
+            motors.setSpeeds(-150,-150);
+        }
+    }
+}
+
+
 ///////////////////
 // Battery Level //
 ///////////////////
@@ -183,9 +211,6 @@ const float minBatteryLevel = 0.0;
 const float lowBatteryThreshold = 20.0;
 //-----------------------------//
 
-//-----------Flag-MOVEMENT-------------//
-bool shouldMove = true;
-//-------------------------------------//
 
 //-----------Charging-Cycles-------------//
 int chargingCycles = 0;
@@ -193,22 +218,22 @@ int chargingCycles = 0;
 
 float batteryLevel = 100.0;
 
+
 void updateBatteryLevel()
-{ // Edit
-    if (speed > 0)
+{
+    if (hiddenFeature)
     {
         batteryLevel -= dischargeRate;
-
-        if (batteryLevel < lowBatteryThreshold)
-        {
-            batteryLevel = lowBatteryThreshold;
-        }
-        if (batteryLevel > maxBatteryLevel)
-        {
-            batteryLevel = maxBatteryLevel;
-        }
     }
+    else
+    {
+        batteryLevel -= abs(dischargeRate);
+    }
+
+    batteryLevel = constrain(batteryLevel, minBatteryLevel, maxBatteryLevel);
 }
+
+
 
 ///////////////////
 //// Main Loop ////
@@ -291,14 +316,16 @@ Serial.println("--------------");
     //-----------------------------//
   */
     updateSpeedOMeterScreen();
-
+    updateHiddenFeature();
     updateBatteryLevel();
     Serial.println("BatteryLevel: ");
     Serial.println(batteryLevel);
     Serial.println("---------------");
-    Serial.println("ChargingCylce: ");
-    Serial.println(chargingCycles);
+    // Serial.println("ChargingCylce: ");
+    // Serial.println(chargingCycles);
 
+    
+    
     //---------------------------------------TEST-logic------------------------------------//
 
     delay(500);
